@@ -4,10 +4,10 @@
       <v-card>
         <v-list style="height:90vh; overflow-y:auto;">
 
-          <v-list-item v-for="(item, i) in activities" :key="i" :value="item" active-color="#e9c46a" @click="like(item)" variant="plain" border="10">
+          <v-list-item v-for="(item, i) in activities" :key="i" :value="item" active-color="#e9c46a" @click="like(item)" border="10">
             <template v-slot:prepend>
               <v-img v-if="!item.image" :width="300" aspect-ratio="16/9" cover src="https://cdn.vuetifyjs.com/images/parallax/material.jpg"></v-img>
-              <v-img v-if="item.image" :width="300" aspect-ratio="16/9" cover src=""></v-img>
+              <v-img v-else-if="item.image!==''" :width="300" aspect-ratio="16/9" cover :src="item.image" class="image_fix"></v-img>
             </template>
 
             <template v-slot:append class="d-flex align-end mb-6">
@@ -19,14 +19,15 @@
 
             <v-list-item-title>
               <div class="d-flex justify-center">
-                <v-card width="500px">
-                  <v-card-title class="text-h6 text-md-h5 text-lg-h4">{{item.name}}</v-card-title>
+                <v-card width="500px" style="background-color: transparent;">
+                  <v-card-title class="text-h6 text-md-h4 text-lg-h4">{{item.name}}</v-card-title>
                   <v-card-text>
+                    <div class="text-md-h5 mb-2">
+                      {{item.city}}</div>
                     <div>
                       {{item.description}} <br>
-                      <v-chip variant="elevated" class="mt-6 mr-2" v-for="(item, i) in item.types" :key="i" :value="item" color="#f4a261" text-color="white">{{item}}</v-chip>
+                      <v-chip variant="elevated" class="mt-4 mr-2" v-for="(item, i) in item.types" :key="i" :value="item" color="#f4a261" text-color="white">{{item}}</v-chip>
                     </div>
-                    
                   </v-card-text>
                 </v-card>
               </div>
@@ -56,7 +57,7 @@
         </ol-tile-layer>
       </ol-map> -->
       <div style="height:90vh">
-        <l-map ref="map" zoom=6 :center="[47, 2.213749]" :useGlobalLeaflet="false">
+        <l-map ref="map" zoom=6 min-zoom="6" :center="[47, 2.213749]" :useGlobalLeaflet="false">
           <l-tile-layer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             layer-type="base"
@@ -117,11 +118,21 @@ export default {
       'Access-Control-Allow-Origin': '*',
       'Content-Type': 'application/json',
     });
+    console.log(response)
     const citiesName = response.data.map((e) => {
       return e.nom
+        
+    })
+    const cities = response.data.map((e) => {
+      return {
+        "nom": e.nom,
+        "longitude": e.longitude,
+        "latitude": e.latitude
+      }
+        
     })
     this.$store.state.citiesName = citiesName
-    //console.log(this.$store.state.citiesName)
+    this.$store.state.cities = cities
       } catch (error) {
         console.log(error);
       }
@@ -129,10 +140,7 @@ export default {
   },
   created() {
     this.getData();
-    // console.log(this.$store.state.citiesName.length)
-    // if(this.$store.state.citiesName.length===0){
     this.getCities()
-    // }
   },
 }
 </script>
@@ -159,5 +167,11 @@ export default {
 /* Handle on hover */
 ::-webkit-scrollbar-thumb:hover {
   background: #BCBCBC;
+}
+
+.image_fix{
+  width: 300px;
+  aspect-ratio: 16/9;
+  display: block;
 }
 </style>

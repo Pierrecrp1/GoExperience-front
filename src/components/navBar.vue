@@ -77,6 +77,18 @@
                           ></v-autocomplete>
                         </v-col>
                       </v-row>
+                      <v-row>
+                        <v-col>
+                          <v-file-input
+                            v-model="image"
+                            :rules="rulesImg"
+                            accept="image/png, image/jpeg"
+                            placeholder="Choisissez une Image"
+                            prepend-icon="mdi-camera"
+                            label="Importer une Image"
+                          ></v-file-input>
+                        </v-col>
+                      </v-row>
                     </v-container>
                     <small>Tout les champs sont requis</small>
                   </v-card-text>
@@ -142,13 +154,9 @@
 
 <script>
 import axios from 'axios';
+import _ from 'lodash';
   export default {
     data: () => ({
-      user: {
-        initials: 'JD',
-        fullName: 'John Doe',
-        email: 'john.doe@doe.com',
-      },
       dialog: false,
       logged: localStorage.getItem('userId'),
       activite: "",
@@ -158,6 +166,14 @@ import axios from 'axios';
       visibleItems: [],
       totalItems: 0,
       search: '',
+      rulesImg: [
+        value => {
+          return !value || !value.length || value[0].size < 5000000 || 'Votre Image doit faire moins de 5 MB!'
+        },
+      ],
+      image: null, // Image sélectionnée
+      imageData: null, // Données de l'image en base 64
+      base64Data: '', // Chaîne en base 64
 
     }),
     methods: {
@@ -167,10 +183,16 @@ import axios from 'axios';
             "name": this.activite,
             "types": this.types,
             "description": this.description,
+            "city": this.city,
+            "image": this.base64Data,
+            "position": {
+              "longitude": this.getPosition(this.city).longitude,
+              "latitude": this.getPosition(this.city).latitude
+            },
             "id_owner": localStorage.getItem('userId')
           });
-          this.$forceUpdate();
-          this.$router.go()
+          // this.$forceUpdate();
+          // this.$router.go()
         } catch (error) {
           console.log(error);
         }
@@ -189,6 +211,63 @@ import axios from 'axios';
         this.visibleItems = this.filteredItems.slice(startIndex, endIndex);
         this.totalItems = this.filteredItems.length;
       },
+      async createBase64Image() {
+        if (this.image) {
+          const maxSizeInBytes = 500 * 1024; // 500 Ko
+          const compressedDataUrl = await this.compressImage(this.image[0], maxSizeInBytes);
+          console.log(compressedDataUrl)
+          this.$data.base64Data = compressedDataUrl
+        }
+        else{
+          this.base64Data = ''
+        }
+      },
+      compressImage(imageFile, maxSizeInBytes) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+
+          reader.onload = function(event) {
+            const img = new Image();
+
+            img.onload = function() {
+              const canvas = document.createElement('canvas');
+              const ctx = canvas.getContext('2d');
+
+              // Calculer les dimensions de l'image avec un ratio de compression
+              const compressionRatio = Math.sqrt(maxSizeInBytes / (img.width * img.height));
+              const width = img.width * compressionRatio;
+              const height = img.height * compressionRatio;
+
+              // Redimensionner l'image sur le canvas
+              canvas.width = width;
+              canvas.height = height;
+              ctx.drawImage(img, 0, 0, width, height);
+
+              // Convertir le canvas en base64 avec une qualité de compression
+              const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7); // Réglez la qualité de compression ici
+
+              resolve(compressedDataUrl);
+            };
+
+            img.onerror = function(error) {
+              reject(error);
+            };
+
+            img.src = event.target.result;
+          };
+
+          reader.onerror = function(error) {
+            reject(error);
+          };
+
+          reader.readAsDataURL(imageFile);
+        });
+      },
+      getPosition(ville){
+        const index = _.findIndex(this.$store.state.cities, ["nom", ville])
+        console.log(this.$store.state.cities[index])
+        return this.$store.state.cities[index]
+      }
     },
     computed: {
     filteredItems() {
@@ -200,5 +279,10 @@ import axios from 'axios';
       return this.$store.state.citiesName;
     },
   },
+  watch: {
+    image: function(){
+      this.createBase64Image()
+    }
+  }
   }
 </script>

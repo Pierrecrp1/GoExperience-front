@@ -2,7 +2,9 @@ import { createStore } from 'vuex'
 
 export default createStore({
   state: {
-    citiesName: []
+    citiesName: [],
+    cities: [],
+    imageBase64: '',
   },
   mutations: {
     
