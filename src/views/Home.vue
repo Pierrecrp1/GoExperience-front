@@ -1,6 +1,6 @@
 <template>
   <navBar class="navBar"/>
-  <HelloWorld/>
+  <HelloWorld class="HelloWorld"/>
 </template>
 
 <script setup>
@@ -12,5 +12,9 @@
   .navBar{
     position: sticky;
     z-index: 10;
+  }
+
+  .HelloWorld{
+    position: sticky;
   }
 </style>

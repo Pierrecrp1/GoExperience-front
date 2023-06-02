@@ -2,7 +2,7 @@
   <v-row justify="start" no-gutters>
     <v-col cols="5" no-gutters>
       <v-card>
-        <v-list style="height:90vh; overflow-y:auto;">
+        <v-list style="height:87vh; overflow-y:auto;">
 
           <v-list-item v-for="(item, i) in activities" :key="i" :value="item" active-color="#e9c46a" @click="like(item)" border="10">
             <template v-slot:prepend>
@@ -56,7 +56,7 @@
           <ol-source-osm />
         </ol-tile-layer>
       </ol-map> -->
-      <div style="height:90vh">
+      <div style="height:87vh">
         <l-map ref="map" zoom=6 min-zoom="6" :center="[47, 2.213749]" :useGlobalLeaflet="false">
           <l-tile-layer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -118,7 +118,6 @@ export default {
       'Access-Control-Allow-Origin': '*',
       'Content-Type': 'application/json',
     });
-    console.log(response)
     const citiesName = response.data.map((e) => {
       return e.nom
         

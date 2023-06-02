@@ -143,7 +143,8 @@
   min-width: 600px;
 }
 .searchfield{
-  min-width: 500px;
+  max-width: 500px;
+  width: 100%;
 }
 
 .container-searchbarv2{
@@ -174,10 +175,12 @@ import _ from 'lodash';
       image: null, // Image sélectionnée
       imageData: null, // Données de l'image en base 64
       base64Data: '', // Chaîne en base 64
-
+      latitude: null,
+      longitude: null,
     }),
     methods: {
       async addActivity() {
+        this.getCoordinates()
         try {
           const response = await axios.post("http://localhost:3001/api/activities", {
             "name": this.activite,
@@ -186,8 +189,8 @@ import _ from 'lodash';
             "city": this.city,
             "image": this.base64Data,
             "position": {
-              "longitude": this.getPosition(this.city).longitude,
-              "latitude": this.getPosition(this.city).latitude
+              "latitude": this.latitude,
+              "longitude": this.longitude
             },
             "id_owner": localStorage.getItem('userId')
           });
@@ -225,48 +228,58 @@ import _ from 'lodash';
       compressImage(imageFile, maxSizeInBytes) {
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
-
           reader.onload = function(event) {
             const img = new Image();
-
             img.onload = function() {
               const canvas = document.createElement('canvas');
               const ctx = canvas.getContext('2d');
 
-              // Calculer les dimensions de l'image avec un ratio de compression
               const compressionRatio = Math.sqrt(maxSizeInBytes / (img.width * img.height));
               const width = img.width * compressionRatio;
               const height = img.height * compressionRatio;
 
-              // Redimensionner l'image sur le canvas
               canvas.width = width;
               canvas.height = height;
               ctx.drawImage(img, 0, 0, width, height);
 
-              // Convertir le canvas en base64 avec une qualité de compression
-              const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7); // Réglez la qualité de compression ici
+              const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
 
               resolve(compressedDataUrl);
             };
-
             img.onerror = function(error) {
               reject(error);
             };
-
             img.src = event.target.result;
           };
-
           reader.onerror = function(error) {
             reject(error);
           };
-
           reader.readAsDataURL(imageFile);
         });
       },
-      getPosition(ville){
-        const index = _.findIndex(this.$store.state.cities, ["nom", ville])
-        console.log(this.$store.state.cities[index])
-        return this.$store.state.cities[index]
+      async getCoordinates() {
+        try {
+          const response = await axios.get("https://nominatim.openstreetmap.org/search", {
+            headers: {
+              'Access-Control-Allow-Origin': "*",
+              'Accept': '*',
+            },
+            q: 'Paris, France',
+            format: 'json'
+          });
+          const results = response.data;
+          if (results.length > 0) {
+            this.latitude = parseFloat(results[0].lat);
+            this.longitude = parseFloat(results[0].lon);
+          } else {
+            this.latitude = null;
+            this.longitude = null;
+          }
+          console.log(this.latitude)
+          console.log(this.longitude)
+        } catch (error) {
+          console.log(error);
+        }
       }
     },
     computed: {
