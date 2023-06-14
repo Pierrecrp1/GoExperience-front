@@ -37,12 +37,5 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    proxy: {
-      '/geolocate': {
-        target: 'https://nominatim.openstreetmap.org',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/geolocate/, ''),
-      },
-    },
   },
 })

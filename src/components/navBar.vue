@@ -18,8 +18,10 @@
               hide-details
               variant="outlined"
               label="Recherche"
+              v-model="searchItem"
+              @keyup.enter="this.$emit('setSearchItem', this.searchItem.toLowerCase());"
             /> 
-            <v-btn color="#f4a261" variant="flat" height="100%" @click="loadMoreItems()">
+            <v-btn color="#f4a261" variant="flat" height="100%" @click="this.$emit('setSearchItem', this.searchItem.toLowerCase());">
               Rechercher
             </v-btn>
           </div>
@@ -90,14 +92,15 @@
                         </v-col>
                       </v-row>
                     </v-container>
-                    <small>Tout les champs sont requis</small>
+                    <small>Seul l'image n'est pas requis</small>
                   </v-card-text>
                   <v-card-actions>
+                    <medium v-if="errorActivity===true"><span style="color: red;">Merci de renseigner les champs nécessaires</span></medium>
                     <v-spacer></v-spacer>
                     <v-btn
                       color="red"
                       variant="text"
-                      @click="dialog = false"
+                      @click="{dialog=false; errorActivity=false}"
                     >
                       Fermer
                     </v-btn>
@@ -112,7 +115,7 @@
                 </v-card>
               </v-dialog>
             </v-row>
-          <v-btn v-if="logged" variant="outlined" height="100%" @click="dialog=true">
+          <v-btn v-if="logged" variant="outlined" height="100%" @click="{dialog=true; errorActivity=false}">
               Publier une activité
           </v-btn>
           <v-btn v-if="logged" class="ml-4" variant="outlined" height="100%" @click="logout" color="red" font-color="white">
@@ -163,7 +166,7 @@ import _ from 'lodash';
       activite: "",
       description: "",
       types: [],
-      city: '',
+      city: null,
       visibleItems: [],
       totalItems: 0,
       search: '',
@@ -177,27 +180,41 @@ import _ from 'lodash';
       base64Data: '', // Chaîne en base 64
       latitude: null,
       longitude: null,
+      errorActivity: false,
+      searchItem: '',
     }),
     methods: {
+      ValidForm() {
+        if (this.activite !== '' && this.description !== '' && this.types !== [] && this.city !== null){
+          return true
+        }
+        return false
+      },
       async addActivity() {
-        this.getCoordinates()
-        try {
-          const response = await axios.post("http://localhost:3001/api/activities", {
-            "name": this.activite,
-            "types": this.types,
-            "description": this.description,
-            "city": this.city,
-            "image": this.base64Data,
-            "position": {
-              "latitude": this.latitude,
-              "longitude": this.longitude
-            },
-            "id_owner": localStorage.getItem('userId')
-          });
-          // this.$forceUpdate();
-          // this.$router.go()
-        } catch (error) {
-          console.log(error);
+        if (this.ValidForm()){
+          await this.getCoordinates();
+          try {
+            const response = await axios.post("http://localhost:3001/api/activities", {
+              "name": this.activite,
+              "types": this.types,
+              "description": this.description,
+              "city": this.city,
+              "image": this.base64Data,
+              "position": {
+                "latitude": this.latitude,
+                "longitude": this.longitude
+              },
+              "id_owner": localStorage.getItem('userId')
+            });
+            this.errorActivity = false;
+            this.$forceUpdate();
+            this.$router.go();
+          } catch (error) {
+            console.log(error);
+          }
+        }
+        else {
+          this.errorActivity = true;
         }
       },
       logout() {
@@ -259,22 +276,15 @@ import _ from 'lodash';
       },
       async getCoordinates() {
         try {
-          const response = await axios.get("https://nominatim.openstreetmap.org/search", {
-            headers: {
-              'Access-Control-Allow-Origin': "*",
-              'Accept': '*',
-            },
-            q: 'Paris, France',
-            format: 'json'
+          // const response = await axios.get("https://nominatim.openstreetmap.org/search", {
+          const response = await axios.get(`http://localhost:3001/api/search/${this.city}`, {
+            headers:{
+              'Content-Type': 'application/json',
+            }
           });
-          const results = response.data;
-          if (results.length > 0) {
-            this.latitude = parseFloat(results[0].lat);
-            this.longitude = parseFloat(results[0].lon);
-          } else {
-            this.latitude = null;
-            this.longitude = null;
-          }
+          console.log(response);
+          this.latitude = response.data.lat !== undefined ? parseFloat(response.data.lat) : null;
+          this.longitude = response.data.lon !== undefined ? parseFloat(response.data.lon) : null;
           console.log(this.latitude)
           console.log(this.longitude)
         } catch (error) {

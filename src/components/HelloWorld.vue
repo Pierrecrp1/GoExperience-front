@@ -1,10 +1,14 @@
 <template>
   <v-row justify="start" no-gutters>
-    <v-col cols="5" no-gutters>
+    <ActivityDetail @closeDetail="showDetail=false" :detail="showDetail" :data="detailData"></ActivityDetail>
+    <v-col class="list_col" no-gutters>
       <v-card>
         <v-list style="height:87vh; overflow-y:auto;">
-
-          <v-list-item v-for="(item, i) in activities" :key="i" :value="item" active-color="#e9c46a" @click="like(item)" border="10">
+          <medium
+          v-if="activities.filter(item => {return filterSearch.some(key => {return item[key].toLowerCase().includes(searchItem)})}).length === 0"
+          class="text-center d-block pt-4">
+          Aucune activité n'a été trouvée</medium>
+          <v-list-item v-for="(item, i) in activities.filter(item => {return filterSearch.some(key => {return item[key].toLowerCase().includes(searchItem)})})" :key="i" :value="item" active-color="#ffffff" @click="getDetail(item)" border="10">
             <template v-slot:prepend>
               <v-img v-if="!item.image" :width="300" aspect-ratio="16/9" cover src="https://cdn.vuetifyjs.com/images/parallax/material.jpg"></v-img>
               <v-img v-else-if="item.image!==''" :width="300" aspect-ratio="16/9" cover :src="item.image" class="image_fix"></v-img>
@@ -19,7 +23,7 @@
 
             <v-list-item-title>
               <div class="d-flex justify-center">
-                <v-card width="500px" style="background-color: transparent;">
+                <v-card width="100%" style="background-color: transparent;">
                   <v-card-title class="text-h6 text-md-h4 text-lg-h4">{{item.name}}</v-card-title>
                   <v-card-text>
                     <div class="text-md-h5 mb-2">
@@ -32,32 +36,30 @@
                 </v-card>
               </div>
             </v-list-item-title>
-
-
           </v-list-item>
         </v-list>
       </v-card>
     </v-col>
-    <v-col no-gutters>
-      <!-- <ol-map
-        :loadTilesWhileAnimating="true"
-        :loadTilesWhileInteracting="true"
-        style="height:90vh"
-      >
-        <ol-view
-          ref="view"
-          :center="center"
-          :rotation="rotation"
-          :zoom="zoom"
-          :projection="projection"
-        />
-
-        <ol-tile-layer>
-          <ol-source-osm />
-        </ol-tile-layer>
-      </ol-map> -->
+    <v-col class="map_col" no-gutters>
       <div style="height:87vh">
-        <l-map ref="map" zoom=6 min-zoom="6" :center="[47, 2.213749]" :useGlobalLeaflet="false">
+        <l-map
+          ref="map"
+          :zoom="zoom"
+          min-zoom="6"
+          :center="center"
+          :useGlobalLeaflet="false"
+          @update:zoom="zoomUpdated"
+          @update:center="centerUpdated">
+          <LCircle
+            v-for="marker in markers"
+            :key="marker.name"
+            :lat-lng="marker.position"
+            color="transparent"
+            fillColor="red"
+            fillOpacity="0.25"
+            :radius="radius"
+            @click="searchItem = marker.city.toLowerCase()"
+          ></LCircle>
           <l-tile-layer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             layer-type="base"
@@ -72,15 +74,23 @@
 <script>
 import axios from 'axios';
 import "leaflet/dist/leaflet.css";
-import { LMap, LTileLayer } from "@vue-leaflet/vue-leaflet";
+import { LMap, LTileLayer, LCircle } from "@vue-leaflet/vue-leaflet";
+import ActivityDetail from './ActivityDetail.vue';
 export default {
   components: {
     LMap,
     LTileLayer,
+    LCircle,
+    ActivityDetail,
+  },
+  props: {
+    searchItem: String,
   },
   data () {
     return {
-      zoom: 2,
+      zoom: 6,
+      radius: 20000,
+      center: [47, 2.213749],
       search: '',
       items: [
         { text: 'Real-Time', icon: 'mdi-clock' },
@@ -88,6 +98,10 @@ export default {
         { text: 'Conversions', icon: 'mdi-flag' },
       ],
       activities: [],
+      markers: [],
+      filterSearch: ["name", "description", "city"],
+      showDetail: false,
+      detailData: null,
     }
   },
   methods: {
@@ -98,19 +112,27 @@ export default {
       'Content-Type': 'application/json',
     });
         this.activities = response.data;
+        this.displayLoc();
       } catch (error) {
         console.log(error);
       }
     },
-    async like(item) {
-      try {
-        const response = await axios.post(`http://localhost:3001/api/activities/${item._id}/like`, {'user':item.user}, {headers:{
-      'Content-Type': 'application/json',
-    }});
-      this.cities = response.data
-      } catch (error) {
-        console.log(error);
+    displayLoc(){
+      for (const x in this.activities) {
+        const line = this.activities[x]
+        if ((line.position !== undefined) && (line.position.latitude !== null && line.position.longitude !== null)){
+          const obj = {
+            name: line.name,
+            city: line.city,
+            position: [line.position.latitude, line.position.longitude]
+          }
+          this.markers.push(obj)
+        }
       }
+    },
+    getDetail(item){
+      this.detailData = item;
+      this.showDetail = true;
     },
     async getCities() {
       try {
@@ -122,24 +144,29 @@ export default {
       return e.nom
         
     })
-    const cities = response.data.map((e) => {
-      return {
-        "nom": e.nom,
-        "longitude": e.longitude,
-        "latitude": e.latitude
-      }
-        
-    })
     this.$store.state.citiesName = citiesName
-    this.$store.state.cities = cities
+    this.radius = 5000 * (11-this.zoom)
       } catch (error) {
         console.log(error);
       }
     },
+    zoomUpdated (zoom) {
+      if (zoom > 5 && zoom <= 9){
+        this.radius = 5000 * (11-zoom)
+      }
+      else if (zoom > 9 && zoom <= 14){
+        this.radius = 1000 * (15-zoom)
+      }
+     this.zoom = zoom;
+     
+   },
+   centerUpdated (center) {
+     this.center = center;
+   }
   },
   created() {
+    this.getCities();
     this.getData();
-    this.getCities()
   },
 }
 </script>
@@ -172,5 +199,16 @@ export default {
   width: 300px;
   aspect-ratio: 16/9;
   display: block;
+}
+
+.list_col{
+  min-width: 300px;
+  max-width: 700px;
+  width: 100%;
+}
+
+.map_col{
+  max-width: 1200px;
+  width: 100%;
 }
 </style>

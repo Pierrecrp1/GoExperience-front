@@ -2,9 +2,8 @@
 
     <v-container fluid class="container-login ma-0 pa-0">
         <v-row no-gutters class="container-mapper">
-            <v-col cols="8">
-                <!-- Ajouter vos trucs à gauche ICI -->
-                <v-img width="100%" aspect-ratio="1/1" cover src="assets/images/login_bg.jpg"></v-img>
+            <v-col cols="8" class="d-flex align-center justify-center">
+                <img src="login_bg.png" alt="" class="login_img">                
             </v-col>            
             <v-col cols="4">
                 <v-sheet 
@@ -101,7 +100,7 @@ export default {
 } */
 
 .container-login{
-    background-color: #ec7263;
+    background-color: #f4a261;
     height: 100vh;
 }
 
@@ -109,6 +108,10 @@ export default {
 .container-mapper{
     height: 100vh;
     width: 100vw;
+}
+
+.login_img{
+    width: 60% !important;
 }
 
 
