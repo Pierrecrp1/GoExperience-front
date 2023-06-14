@@ -1,6 +1,6 @@
 <template>
   <v-row justify="start" no-gutters>
-    <ActivityDetail @closeDetail="showDetail=false" :detail="showDetail" :data="detailData"></ActivityDetail>
+    <ActivityDetail @closeDetail="{showDetail=false; refreshData()}" :detail="showDetail" :data="detailData"></ActivityDetail>
     <v-col class="list_col" no-gutters>
       <v-card>
         <v-list style="height:87vh; overflow-y:auto;">
@@ -8,7 +8,7 @@
           v-if="activities.filter(item => {return filterSearch.some(key => {return item[key].toLowerCase().includes(searchItem)})}).length === 0"
           class="text-center d-block pt-4">
           Aucune activité n'a été trouvée</medium>
-          <v-list-item v-for="(item, i) in activities.filter(item => {return filterSearch.some(key => {return item[key].toLowerCase().includes(searchItem)})})" :key="i" :value="item" active-color="#ffffff" @click="getDetail(item)" border="10">
+          <v-list-item v-for="(item, i) in activities.filter(item => {return filterSearch.some(key => {return item[key].toLowerCase().includes(searchItem)})})" :key="i" :value="item" @click="getDetail(item)" border="10">
             <template v-slot:prepend>
               <v-img v-if="!item.image" :width="300" aspect-ratio="16/9" cover src="https://cdn.vuetifyjs.com/images/parallax/material.jpg"></v-img>
               <v-img v-else-if="item.image!==''" :width="300" aspect-ratio="16/9" cover :src="item.image" class="image_fix"></v-img>
@@ -113,6 +113,17 @@ export default {
     });
         this.activities = response.data;
         this.displayLoc();
+      } catch (error) {
+        console.log(error);
+      }
+    },
+    async refreshData() {
+      try {
+        const response = await axios.get("http://localhost:3001/api/activities", {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json',
+      });
+        this.activities = response.data;
       } catch (error) {
         console.log(error);
       }

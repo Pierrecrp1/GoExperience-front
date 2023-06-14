@@ -22,7 +22,8 @@
                             {{data.city}}
                         </div>
                         <div class="d-flex align-end mb-6">
-                            <v-icon class="me-1" icon="mdi-heart"></v-icon>
+                            <v-icon class="me-1" icon="mdi-heart" color="pink" v-if="((islike === null && data.likes.includes(getUser())) || islike===true)" @click="{islike = false; like()}"></v-icon>
+                            <v-icon class="me-1" icon="mdi-heart-outline" v-else @click="{islike = true; like()}"></v-icon>
                             <span class="subheading me-2">{{data.likes.length}}</span>
                         </div>
                         <div>
@@ -38,7 +39,7 @@
             <v-btn
                 color="blue"
                 variant="text"
-                @click="$emit('closeDetail')"
+                @click="{islike = null; $emit('closeDetail')}"
             >
                 Fermer
             </v-btn>
@@ -48,6 +49,7 @@
 </template>
 
 <script>
+import axios from 'axios';
     export default{
         props: {
             detail: Boolean,
@@ -56,13 +58,29 @@
         data () {
             return {
                 dialog: this.detail,
+                islike: null,
             }
         },
         watch: {
             detail: function() {
                 this.dialog = this.detail;
             }
-        }
+        },
+        methods: {
+            async like() {
+                console.log(this.islike)
+                try {
+                    const response = await axios.post(`http://localhost:3001/api/activities/${this.data['_id']}/like`, {
+                    "userId": localStorage.getItem('userId')
+                    });
+                } catch (error) {
+                    console.log(error);
+                }
+            },
+            getUser(){
+                return localStorage.getItem('userId')
+            },
+        },
     }
 </script>
 
