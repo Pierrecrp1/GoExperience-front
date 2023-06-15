@@ -1,6 +1,6 @@
 <template>
-  <navBar class="navBar" @setSearchItem="setSearchItem"/>
-  <HelloWorld class="HelloWorld" :searchItem="searchItem"/>
+  <navBar class="navBar" @setSearchItem="setSearchItem" :searchItemHome="searchItem"/>
+  <HelloWorld class="HelloWorld" @setSearchItem="setSearchItem" :searchItem="searchItem"/>
 </template>
 
 <script setup>

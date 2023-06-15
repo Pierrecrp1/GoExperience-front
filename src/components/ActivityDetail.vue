@@ -27,7 +27,7 @@
                             <span class="subheading me-2">{{data.likes.length}}</span>
                         </div>
                         <div>
-                        {{data.description}}<br>
+                            <p v-for="line in data.description">{{ line }}</p><br>
                         <v-chip variant="elevated" class="mt-4 mr-2" v-for="(item, i) in data.types" :key="i" :value="item" color="#f4a261" text-color="white">{{item}}</v-chip>
                         </div>
                     </v-col>
@@ -68,7 +68,6 @@ import axios from 'axios';
         },
         methods: {
             async like() {
-                console.log(this.islike)
                 try {
                     const response = await axios.post(`http://localhost:3001/api/activities/${this.data['_id']}/like`, {
                     "userId": localStorage.getItem('userId')

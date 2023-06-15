@@ -16,7 +16,8 @@
 
             <template v-slot:append class="d-flex align-end mb-6">
               <div class="d-flex align-end mb-6">
-                <v-icon class="me-1" icon="mdi-heart"></v-icon>
+                <v-icon class="me-1" icon="mdi-heart" color="pink" v-if="item.likes.includes(getUser())"></v-icon>
+                <v-icon class="me-1" icon="mdi-heart-outline" v-else></v-icon>
                 <span class="subheading me-2">{{item.likes.length}}</span>
               </div>
             </template>
@@ -29,7 +30,7 @@
                     <div class="text-md-h5 mb-2">
                       {{item.city}}</div>
                     <div>
-                      {{item.description}} <br>
+                      {{item.description[0] }} <br>
                       <v-chip variant="elevated" class="mt-4 mr-2" v-for="(item, i) in item.types" :key="i" :value="item" color="#f4a261" text-color="white">{{item}}</v-chip>
                     </div>
                   </v-card-text>
@@ -58,7 +59,7 @@
             fillColor="red"
             fillOpacity="0.25"
             :radius="radius"
-            @click="searchItem = marker.city.toLowerCase()"
+            @click="{searchItem = marker.city.toLowerCase(); $emit('setSearchItem', searchItem)}"
           ></LCircle>
           <l-tile-layer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -92,14 +93,9 @@ export default {
       radius: 20000,
       center: [47, 2.213749],
       search: '',
-      items: [
-        { text: 'Real-Time', icon: 'mdi-clock' },
-        { text: 'Audience', icon: 'mdi-account' },
-        { text: 'Conversions', icon: 'mdi-flag' },
-      ],
       activities: [],
       markers: [],
-      filterSearch: ["name", "description", "city"],
+      filterSearch: ["name", "city"],
       showDetail: false,
       detailData: null,
     }
@@ -144,6 +140,9 @@ export default {
     getDetail(item){
       this.detailData = item;
       this.showDetail = true;
+    },
+    getUser(){
+      return localStorage.getItem('userId')
     },
     async getCities() {
       try {

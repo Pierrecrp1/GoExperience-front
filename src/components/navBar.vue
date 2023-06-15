@@ -49,7 +49,7 @@
                           counter
                           required
                           label="Description"
-                          maxlength="200"
+                          maxlength="400"
                           single-line
                         ></v-textarea>
                         </v-col>
@@ -71,7 +71,7 @@
                           sm="6"
                         >
                           <v-autocomplete
-                            :items="['Aquatique', 'Course', 'Jeux pour enfants', 'Vélo', 'BMX/Skate/Trotinette/Rollers', 'Football', 'Basketball', 'Pêche', 'Bowling', 'Lasergame', 'Paintball', 'Karting', 'Escalade', 'Piscine', 'Patinoire', 'Escape game', 'Plage', 'Musée','Monument','Jardins','Parc forestier','Parc aquatique' ,'Zoo','Boutique','Cinéma','Théâtre','Bar','Club','Bien-être','Médecine','Soins','Santé','Salles de jeux']"
+                            :items="activityList"
                             label="Types"
                             multiple
                             chips
@@ -182,7 +182,11 @@ import _ from 'lodash';
       longitude: null,
       errorActivity: false,
       searchItem: '',
+      activityList: ['Aquatique', 'Course', 'Jeux pour enfants', 'Vélo', 'BMX/Skate/Trotinette/Rollers', 'Football', 'Basketball', 'Pêche', 'Bowling', 'Lasergame', 'Paintball', 'Karting', 'Escalade', 'Piscine', 'Patinoire', 'Escape game', 'Plage', 'Musée','Monument','Jardins','Parc forestier','Parc aquatique' ,'Zoo','Boutique','Cinéma','Théâtre','Bar','Club','Bien-être','Médecine','Soins','Santé','Salles de jeux'],
     }),
+    props: {
+      searchItemHome: String,
+    },
     methods: {
       ValidForm() {
         if (this.activite !== '' && this.description !== '' && this.types !== [] && this.city !== null){
@@ -191,13 +195,14 @@ import _ from 'lodash';
         return false
       },
       async addActivity() {
+        var tempDesc = this.description.split('\n');
         if (this.ValidForm()){
           await this.getCoordinates();
           try {
             const response = await axios.post("http://localhost:3001/api/activities", {
               "name": this.activite,
               "types": this.types,
-              "description": this.description,
+              "description": tempDesc,
               "city": this.city,
               "image": this.base64Data,
               "position": {
@@ -235,7 +240,6 @@ import _ from 'lodash';
         if (this.image) {
           const maxSizeInBytes = 500 * 1024; // 500 Ko
           const compressedDataUrl = await this.compressImage(this.image[0], maxSizeInBytes);
-          console.log(compressedDataUrl)
           this.$data.base64Data = compressedDataUrl
         }
         else{
@@ -282,11 +286,8 @@ import _ from 'lodash';
               'Content-Type': 'application/json',
             }
           });
-          console.log(response);
           this.latitude = response.data.lat !== undefined ? parseFloat(response.data.lat) : null;
           this.longitude = response.data.lon !== undefined ? parseFloat(response.data.lon) : null;
-          console.log(this.latitude)
-          console.log(this.longitude)
         } catch (error) {
           console.log(error);
         }
@@ -305,6 +306,9 @@ import _ from 'lodash';
   watch: {
     image: function(){
       this.createBase64Image()
+    },
+    searchItemHome: function(){
+      this.searchItem = this.searchItemHome
     }
   }
   }
